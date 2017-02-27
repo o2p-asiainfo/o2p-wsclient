@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+						http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+       					http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
+
+	<bean id="memcachePropertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+		<property name="locations">
+            <list>
+                <value>classpath:eaap_memCache.properties</value>
+            </list>
+        </property>
+	</bean>
+
+	<bean name="runtimeMemcachedClient" class="net.rubyeye.xmemcached.utils.XMemcachedClientFactoryBean" destroy-method="shutdown">
+		<property name="servers">
+			<value>${memcache.runtimeserver}</value>
+		</property>
+		<!-- server's weights -->
+		<property name="weights">
+			<list>
+				<value>1</value>
+				<value>1</value>
+			</list> 
+		</property>
+		
+		<!-- nio connection pool size -->
+		<property name="connectionPoolSize"><value>${memcache.runtimeconnectionPoolSize}</value></property>
+		<!-- Use binary protocol,default is TextCommandFactory -->
+		<!-- <property name="commandFactory">
+			<bean class="net.rubyeye.xmemcached.command.BinaryCommandFactory"></bean>
+		</property> -->
+		<!-- Distributed strategy -->
+		<property name="sessionLocator">
+			<bean class="net.rubyeye.xmemcached.impl.KetamaMemcachedSessionLocator"></bean>
+		</property>
+		<!-- Serializing transcoder -->
+		<!-- <property name="transcoder">
+			<bean class="net.rubyeye.xmemcached.transcoders.SerializingTranscoder"/>
+		</property>-->
+		<property name="transcoder">
+			<bean class="com.ailk.eaap.op2.memcache.manage.service.CustomerSerializingTranscoder" />
+		</property>
+		
+		<!-- ByteBuffer allocator -->
+		<property name="bufferAllocator">
+			<bean class="net.rubyeye.xmemcached.buffer.SimpleBufferAllocator"></bean>
+		</property>
+		<!-- Failure mode -->
+		<property name="failureMode"><value>${memcache.runtimefailureMode}</value></property>
+		<property name="opTimeout"><value>${memcache.runtimeOpTimeout}</value></property>
+	</bean>
+	<bean id="o2p.memCache" class="com.ailk.eaap.o2p.client.MemCache">
+		<property name="memcachedClient" ref="runtimeMemcachedClient"></property>
+	</bean>
+</beans>
